@@ -1,37 +1,56 @@
 const express = require("express");
 
 const app = express();
-app.use(express.json());
-
-app.get("/", (req, res) => {
-    res.send("SMS Server Running");
-});
-
-app.post("/sms", (req, res) => {
-    console.log("SMS Received:");
-    console.log(req.body);
-
-    res.json({
-        success: true,
-        message: "SMS saved"
-    });
-});
-
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+// ذخیره موقت پیام‌ها
+let messages = [];
+
+// صفحه اصلی
+app.get("/", (req, res) => {
+    res.send("SMS Server Running");
 });
+
+// تست API
+app.get("/sms", (req, res) => {
+    res.send("SMS API Ready");
+});
+
+// دریافت پیام
 app.post("/sms", (req, res) => {
-    console.log(req.body);
+
+    const sms = {
+        id: Date.now(),
+        device: req.body.device || "Unknown",
+        sender: req.body.sender || "Unknown",
+        message: req.body.message || "",
+        time: new Date().toISOString()
+    };
+
+    messages.push(sms);
+
+    console.log("New SMS:", sms);
 
     res.json({
         success: true,
-        message: "SMS received"
+        data: sms
     });
 });
-app.get("/sms", (req, res) => {
-    res.send("SMS API Ready");
+
+// مشاهده همه پیام‌ها
+app.get("/messages", (req, res) => {
+    res.json(messages);
+});
+
+// تعداد پیام‌ها
+app.get("/count", (req, res) => {
+    res.json({
+        total: messages.length
+    });
+});
+
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
