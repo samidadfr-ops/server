@@ -32,3 +32,6 @@ app.post("/sms", (req, res) => {
         message: "SMS received"
     });
 });
+app.get("/sms", (req, res) => {
+    res.send("SMS API Ready");
+});
