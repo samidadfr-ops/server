@@ -22,3 +22,11 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+app.post("/sms", (req, res) => {
+    console.log(req.body);
+
+    res.json({
+        success: true,
+        message: "SMS received"
+    });
+});
