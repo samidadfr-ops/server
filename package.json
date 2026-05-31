@@ -1,19 +1,10 @@
 {
   "name": "sms-server",
   "version": "1.0.0",
-  "description": "Company SMS Server",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
-  "keywords": [
-    "sms",
-    "server",
-    "postgresql",
-    "render"
-  ],
-  "author": "SMS Company",
-  "license": "MIT",
   "dependencies": {
     "express": "^4.21.0",
     "pg": "^8.12.0"
