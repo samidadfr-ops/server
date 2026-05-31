@@ -1,56 +1,106 @@
 const express = require("express");
+const { Pool } = require("pg");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
 app.use(express.json());
 
-// ذخیره موقت پیام‌ها
-let messages = [];
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
-// صفحه اصلی
+async function initDatabase() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        device VARCHAR(255),
+        sender VARCHAR(255),
+        message TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    console.log("Database Ready");
+  } catch (err) {
+    console.error("Database Error:", err);
+  }
+}
+
+initDatabase();
+
 app.get("/", (req, res) => {
-    res.send("SMS Server Running");
+  res.send("SMS Server Running");
 });
 
-// تست API
 app.get("/sms", (req, res) => {
-    res.send("SMS API Ready");
+  res.send("SMS API Ready");
 });
 
-// دریافت پیام
-app.post("/sms", (req, res) => {
+app.post("/sms", async (req, res) => {
+  try {
+    const { device, sender, message } = req.body;
 
-    const sms = {
-        id: Date.now(),
-        device: req.body.device || "Unknown",
-        sender: req.body.sender || "Unknown",
-        message: req.body.message || "",
-        time: new Date().toISOString()
-    };
-
-    messages.push(sms);
-
-    console.log("New SMS:", sms);
+    const result = await pool.query(
+      `INSERT INTO messages(device, sender, message)
+       VALUES($1, $2, $3)
+       RETURNING *`,
+      [device, sender, message]
+    );
 
     res.json({
-        success: true,
-        data: sms
+      success: true,
+      data: result.rows[0]
     });
+
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
 });
 
-// مشاهده همه پیام‌ها
-app.get("/messages", (req, res) => {
-    res.json(messages);
+app.get("/messages", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM messages ORDER BY id DESC"
+    );
+
+    res.json(result.rows);
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
 });
 
-// تعداد پیام‌ها
-app.get("/count", (req, res) => {
+app.get("/count", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT COUNT(*) FROM messages"
+    );
+
     res.json({
-        total: messages.length
+      total: result.rows[0].count
     });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
 });
 
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
